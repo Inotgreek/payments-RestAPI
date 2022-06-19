@@ -5,9 +5,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type Authorization interface {
-}
-
 type Payment interface {
 	Create(payment models.Payment) error
 	ChangeStatus(paymentId int, payment models.Payment) (string, error)
@@ -18,7 +15,6 @@ type Payment interface {
 }
 
 type Repository struct {
-	Authorization
 	Payment
 }
 

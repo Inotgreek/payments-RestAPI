@@ -3,9 +3,10 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/Inotgreek/constanta2/pkg/models"
 	"github.com/jmoiron/sqlx"
-	"time"
 )
 
 type PaymentPostgres struct {
@@ -29,6 +30,24 @@ func (r *PaymentPostgres) Create(payment models.Payment) error {
 		return err
 	}
 	return nil
+}
+
+func (r *PaymentPostgres) ChangeStatus(paymentId int, payment models.Payment) (string, error) {
+	status, err := r.GetStatusById(paymentId)
+	if err != nil {
+		return "", err
+	}
+	var ChangeStatusQuery string
+	if status == "НОВЫЙ" {
+		ChangeStatusQuery = "UPDATE payments SET status = $1, last_change = $2 WHERE id = $3"
+	} else {
+		return "", err
+	}
+	_, err = r.db.Exec(ChangeStatusQuery, payment.Status, time.Now(), paymentId)
+	if err != nil {
+		return "", err
+	}
+	return payment.Status, nil
 }
 
 func (r *PaymentPostgres) GetStatusById(paymentId int) (string, error) {
@@ -61,23 +80,6 @@ func (r *PaymentPostgres) GetPaymentsByUserID(userId int) ([]models.Payment, err
 	return payments, nil
 }
 
-func (r *PaymentPostgres) ChangeStatus(paymentId int, payment models.Payment) (string, error) {
-	status, err := r.GetStatusById(paymentId)
-	if err != nil {
-		return "", err
-	}
-	var ChangeStatusQuery string
-	if status == "НОВЫЙ" {
-		ChangeStatusQuery = "UPDATE payments SET status = $1, last_change = $2 WHERE id = $3"
-	} else {
-		return "", err
-	}
-	_, err = r.db.Exec(ChangeStatusQuery, payment.Status, time.Now(), paymentId)
-	if err != nil {
-		return "", err
-	}
-	return payment.Status, nil
-}
 func (r *PaymentPostgres) CancelPaymentByID(paymentId int) error {
 	status, err := r.GetStatusById(paymentId)
 	if err != nil {
